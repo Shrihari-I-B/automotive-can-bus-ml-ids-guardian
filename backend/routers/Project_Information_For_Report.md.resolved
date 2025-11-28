@@ -1,0 +1,191 @@
+# Project Information: CAN Bus Intrusion Detection System (IDS)
+
+This document provides detailed information about the CAN Bus IDS project, structured to assist in creating a formal report.
+
+---
+
+## 1. Introduction
+
+The **Controller Area Network (CAN)** is the standard communication protocol used in modern vehicles, allowing Electronic Control Units (ECUs) like the Engine, Transmission, and Brakes to communicate. However, CAN was designed in the 1980s without security features—it lacks encryption and authentication, making it vulnerable to cyber-attacks.
+
+This project implements a **real-time Intrusion Detection System (IDS)** that uses Machine Learning (Autoencoders and One-Class SVM) to detect and classify attacks such as Spoofing, Replay, and Denial of Service (DoS) on a simulated vehicle network. The system features a modern web-based dashboard for real-time monitoring and control.
+
+---
+
+## 2. Literature Survey
+
+*Note: This section summarizes standard research in the field.*
+
+1.  **Vulnerabilities in Modern Automotive Networks**:
+    *   *Miller & Valasek (2015)* demonstrated the remote hacking of a Jeep Cherokee, controlling steering and brakes via the CAN bus. This highlighted the critical need for automotive security.
+    *   *Checkoway et al. (2011)* analyzed attack surfaces, showing that CD players, Bluetooth, and cellular units could be entry points for CAN injection.
+
+2.  **Intrusion Detection Techniques**:
+    *   **Signature-based**: Matches known attack patterns. Effective for known threats but fails against zero-day attacks.
+    *   **Entropy-based**: *Muter & Asaj (2011)* proposed using entropy of CAN identifiers to detect anomalies. High entropy indicates randomness (e.g., fuzzing), while low entropy might indicate a DoS.
+    *   **Machine Learning (Anomaly Detection)**:
+        *   **One-Class SVM (OCSVM)**: Used by *Theissler (2013)* to learn "normal" traffic boundaries and detect outliers.
+        *   **Deep Autoencoders**: *Kang & Kang (2016)* used Deep Neural Networks (DNN) to learn the latent representation of normal CAN packets. High reconstruction error indicates an anomaly.
+
+**Gap Analysis**: Most existing solutions are either purely simulation-based or lack a user-friendly interface. This project bridges that gap by integrating a research-grade ML backend with a responsive, real-time web dashboard.
+
+---
+
+## 3. Problem Statement and Objectives
+
+### Problem Statement
+Modern vehicles are "computers on wheels," but their internal network (CAN) is insecure by design. A compromised ECU can broadcast malicious messages (e.g., "Brake Now") that other ECUs blindly obey. There is a lack of accessible, visual tools to demonstrate these vulnerabilities and the effectiveness of AI-based defense mechanisms.
+
+### Objectives
+1.  **Simulate** a realistic vehicle network with interacting ECUs (Engine, Transmission, ABS).
+2.  **Develop** a hybrid IDS using Autoencoders and OCSVM to detect complex attacks.
+3.  **Implement** specific attack vectors: Context Spoofing, Replay, and Flooding.
+4.  **Create** a "Glass Cockpit" web dashboard for real-time visualization of vehicle physics and security alerts.
+
+---
+
+## 4. System Requirement Specification (SRS)
+
+### 4.1 Functional Requirements
+*   **FR1 - Simulation**: The system must simulate vehicle physics (RPM, Gear, Speed) and broadcast valid CAN frames.
+*   **FR2 - Data Capture**: The system must capture CAN traffic in real-time from the `vcan0` interface.
+*   **FR3 - Detection**: The IDS must detect Spoofing, Replay, and Flood attacks with high accuracy.
+*   **FR4 - Visualization**: The dashboard must display live gauges (RPM, Speed) and update at 10Hz.
+*   **FR5 - Control**: Users must be able to start/stop the simulator, IDS, and attacks via the UI.
+
+### 4.2 Non-Functional Requirements
+*   **NFR1 - Latency**: Dashboard updates should have <200ms latency.
+*   **NFR2 - Scalability**: The backend should handle high-frequency CAN traffic (up to 2000 frames/sec).
+*   **NFR3 - Usability**: The UI should be intuitive, using a dark theme for readability.
+*   **NFR4 - Compatibility**: The system should run on Linux/WSL2 environments.
+
+### 4.3 Hardware/Software Requirements
+*   **OS**: Ubuntu 20.04+ (or WSL2 on Windows).
+*   **Language**: Python 3.8+ (Backend), Node.js 16+ (Frontend).
+*   **Libraries**: `python-can` (CAN utils), `tensorflow` (Autoencoder), `scikit-learn` (OCSVM), `fastapi` (API), `React` (UI).
+*   **Interface**: `vcan` (Virtual CAN) or `socketcan` compatible hardware.
+
+---
+
+## 5. Software Design Specification (SDS)
+
+### 5.1 System Architecture
+The system follows a **Microservices-like Architecture**:
+
+1.  **Simulation Layer**:
+    *   [VehicleFSM](file://wsl$/Ubuntu/home/shrihari/can_ids/can_ids_framework/can_ids/simulation/vehicle_fsm.py#13-115): Finite State Machine managing physics.
+    *   [VirtualECU](file://wsl$/Ubuntu/home/shrihari/can_ids/can_ids_framework/can_ids/simulation/virtual_ecu.py#5-64): Threads broadcasting CAN messages.
+2.  **Detection Layer**:
+    *   [LogParser](file://wsl$/Ubuntu/home/shrihari/can_ids/can_ids_framework/backend/log_parser.py#4-48): Extracts features (Entropy, IAT).
+    *   `ML Engine`: Runs inference using pre-trained models.
+3.  **Backend Layer**:
+    *   `FastAPI`: Manages processes and provides REST/WebSocket APIs.
+4.  **Frontend Layer**:
+    *   `React`: Single Page Application (SPA) for visualization.
+
+### 5.2 Data Flow Diagram (DFD)
+1.  **Input**: [VirtualECU](file://wsl$/Ubuntu/home/shrihari/can_ids/can_ids_framework/can_ids/simulation/virtual_ecu.py#5-64) generates CAN Frame -> `vcan0`.
+2.  **Process**: `IDS Script` reads `vcan0` -> Extracts Features -> ML Model -> Anomaly Score.
+3.  **Output**: `IDS Script` prints Alert -> `Backend` captures stdout -> WebSocket -> `Frontend` displays Alert.
+
+---
+
+## 6. Technology/Tools Used
+
+| Category | Tool/Technology | Purpose |
+| :--- | :--- | :--- |
+| **Backend Logic** | Python 3 | Core scripting, simulation, and ML inference. |
+| **Web Framework** | FastAPI | High-performance API and WebSocket server. |
+| **Frontend** | React.js (Vite) | Dynamic user interface and state management. |
+| **Machine Learning** | TensorFlow (Keras) | Building and running the Autoencoder. |
+| **Machine Learning** | Scikit-learn | One-Class SVM and Data Scaling. |
+| **CAN Protocol** | python-can | Reading/Writing CAN frames to the kernel interface. |
+| **Visualization** | Recharts / SVG | Rendering real-time charts and gauges. |
+| **OS Interface** | WSL2 (Ubuntu) | Hosting the virtual CAN interface. |
+
+---
+
+## 7. Implementation of Module with Codes
+
+### 7.1 Vehicle Simulation ([vehicle_fsm.py](file://wsl$/Ubuntu/home/shrihari/can_ids/can_ids_framework/can_ids/simulation/vehicle_fsm.py))
+Models the physical state of the car.
+```python
+class VehicleFSM:
+    def update(self):
+        # Logic to shift gears based on RPM
+        if self.state == VehicleState.ACCELERATING:
+            self.rpm += 120 
+            if self.rpm > 3500 and self.gear < 5:
+                self.gear += 1
+                self.rpm -= 1000
+```
+
+### 7.2 IDS Detection Logic ([main_live_ids.py](file://wsl$/Ubuntu/home/shrihari/can_ids/can_ids_framework/main_live_ids.py))
+Extracts features and runs ensemble detection.
+```python
+# Feature Extraction
+features_df = extract_window_features(message_buffer)
+
+# Ensemble Prediction
+ocsvm_pred = ocsvm.predict(scaled)[0]
+reconstruction = autoencoder.predict(scaled)
+mse = np.mean(np.power(scaled - reconstruction, 2))
+
+# Anomaly Decision
+if ocsvm_pred == -1 or mse > ae_threshold:
+    anomaly_streak += 1
+```
+
+### 7.3 Frontend Dashboard ([App.jsx](file://wsl$/Ubuntu/home/shrihari/can_ids/can_ids_framework/frontend/src/App.jsx))
+Connects to WebSocket and updates state.
+```javascript
+useEffect(() => {
+    const ws = new WebSocket('ws://localhost:8000/ws/dashboard');
+    ws.onmessage = (event) => {
+        const payload = JSON.parse(event.data);
+        setData(payload); // Updates RPM, Speed, Alerts
+    };
+    return () => ws.close();
+}, []);
+```
+
+---
+
+## 8. Results
+
+### 8.1 Normal Operation
+*   **Dashboard**: Shows smooth RPM/Speed transitions.
+*   **Logs**: "NORMAL" status, low Autoencoder MSE (< 0.05).
+*   **Status**: "System Secure".
+
+### 8.2 Spoofing Attack
+*   **Scenario**: Attacker injects "Gear 2" messages while the car is cruising in "Gear 5".
+*   **Detection**:
+    *   **Physics**: Engine RPM spikes (simulated mechanical stress).
+    *   **IDS**: Detects conflicting data patterns.
+    *   **Alert**: "🚨 ALERT: SPOOFING / REPLAY | Vol: 45".
+*   **Visual**: Dashboard flashes red "INTRUSION DETECTED".
+
+### 8.3 Replay Attack
+*   **Scenario**: Replaying previously recorded traffic.
+*   **Detection**: Inter-Arrival Time (IAT) becomes irregular due to bus contention.
+*   **Alert**: Detected as "SPOOFING / REPLAY" due to volume and timing anomalies.
+
+---
+
+## 9. Future Enhancements
+
+1.  **Hardware Implementation**: Deploy the system on a Raspberry Pi with a PiCAN hat to monitor a real vehicle.
+2.  **Active Defense**: Implement an Intrusion *Prevention* System (IPS) that can actively kill malicious frames (Bus-Off attack).
+3.  **Cloud Integration**: Send logs to a cloud dashboard (e.g., AWS IoT) for fleet-wide monitoring.
+4.  **Advanced Models**: Implement LSTM (Long Short-Term Memory) networks for better time-series anomaly detection.
+
+---
+
+## 10. References
+
+1.  *Miller, C., & Valasek, C. (2015).* **Remote Exploitation of an Unaltered Passenger Vehicle**. Black Hat USA.
+2.  *Bosch.* **CAN Specification 2.0**. (1991).
+3.  *Kang, M. J., & Kang, J. W. (2016).* **Intrusion Detection System Using Deep Neural Network for In-Vehicle Network Security**. PLOS ONE.
+4.  *Theissler, A. (2013).* **Anomaly Detection in Automotive Networks using One-Class SVM**.
+5.  *SocketCAN Documentation*. Linux Kernel Archives.

@@ -1,0 +1,453 @@
+:root {
+    --bg-dark: #0f172a;
+    --bg-card: #1e293b;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --accent-primary: #3b82f6;
+    --accent-danger: #ef4444;
+    --accent-success: #22c55e;
+    --accent-warning: #eab308;
+    --border-color: #334155;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.dashboard-container {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    background-color: var(--bg-card);
+    border-right: 1px solid var(--border-color);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    overflow-y: auto;
+    z-index: 10;
+}
+
+.logo h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent-primary);
+    margin: 0;
+}
+
+.logo p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin: 0.25rem 0 0 0;
+}
+
+.controls-section h3,
+.attacks-section h3 {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1rem;
+}
+
+.control-group {
+    margin-bottom: 1.5rem;
+}
+
+.control-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.attack-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Main Content Styles */
+.main-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    height: 100vh;
+    overflow-y: auto;
+    background-color: var(--bg-dark);
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    flex: 0 0 300px;
+    height: 300px;
+}
+
+.grid-2.bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    flex: 1;
+    min-height: 300px;
+}
+
+/* Card Styles */
+.card {
+    background-color: var(--bg-card);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+}
+
+.card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Gauge Wrapper */
+.gauge-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 0;
+}
+
+.vehicle-state-badge {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(59, 130, 246, 0.2);
+    color: var(--accent-primary);
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* IDS Status */
+.ids-status-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.status-message {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.status-message.success {
+    color: var(--accent-success);
+}
+
+.status-message.danger {
+    color: var(--accent-danger);
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+/* Buttons */
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+}
+
+.btn-primary {
+    background-color: var(--accent-primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb;
+}
+
+.btn-danger {
+    background-color: var(--accent-danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626;
+}
+
+.btn-outline {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.btn-outline:hover {
+    border-color: var(--text-primary);
+    color: var(--text-primary);
+}
+
+.btn-secondary {
+    background-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+    background-color: #475569;
+}
+
+.full-width {
+    width: 100%;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.status-running {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: var(--accent-success);
+}
+
+.status-stopped {
+    background-color: rgba(148, 163, 184, 0.1);
+    color: var(--text-secondary);
+}
+
+/* Logs & Alerts */
+.log-container {
+    background-color: #000;
+    border-radius: 8px;
+    padding: 1rem;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.875rem;
+    color: #d4d4d4;
+    border: 1px solid #333;
+}
+
+.log-line {
+    margin-bottom: 0.25rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.4;
+}
+
+.alerts-list {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding-right: 0.5rem;
+}
+
+.alert-item {
+    background-color: rgba(255, 255, 255, 0.03);
+    border-left: 4px solid var(--accent-danger);
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 4px;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.alert-icon {
+    color: var(--accent-danger);
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-weight: 700;
+    color: var(--accent-danger);
+    margin-bottom: 0.25rem;
+}
+
+.alert-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.alert-details {
+    color: var(--text-secondary);
+}
+
+.alert-time {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* DoS Overlay */
+.dos-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(220, 38, 38, 0.2);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    backdrop-filter: blur(4px);
+}
+
+.dos-alert {
+    background-color: #000;
+    border: 4px solid var(--accent-danger);
+    padding: 3rem;
+    border-radius: 16px;
+    text-align: center;
+    color: var(--accent-danger);
+    box-shadow: 0 0 50px rgba(239, 68, 68, 0.5);
+    animation: pulse 2s infinite;
+}
+
+.dos-alert h1 {
+    margin: 1rem 0;
+    font-size: 2.5rem;
+}
+
+.dos-alert p {
+    margin: 0;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.dos-subtext {
+    margin-top: 1rem !important;
+    font-size: 1rem !important;
+    color: var(--text-secondary) !important;
+    font-family: monospace;
+}
+
+.dos-blur {
+    filter: grayscale(100%) blur(2px);
+    pointer-events: none;
+    transition: all 0.5s ease;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+    }
+
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 0 50px rgba(239, 68, 68, 0.8);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+    }
+}
+
+.blink {
+    animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+    50% {
+        opacity: 0;
+    }
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}

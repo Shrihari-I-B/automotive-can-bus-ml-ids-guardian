@@ -1,0 +1,10 @@
+python-can
+pandas
+numpy
+scikit-learn
+joblib
+fastapi
+uvicorn
+websockets
+pydantic
+tensorflow
