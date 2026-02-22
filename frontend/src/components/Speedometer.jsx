@@ -1,170 +1,279 @@
-import React from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 
 const Speedometer = ({ speed, gear, maxSpeed = 120 }) => {
-    // Calculate angle
-    // 0 Speed = -210 degrees
-    // Max Speed = 30 degrees
-    // Range = 240 degrees
+    const canvasRef = useRef(null);
+    const animRef = useRef(null);
+    const currentAngleRef = useRef(-210);
+    const velocityRef = useRef(0);
+
     const startAngle = -210;
     const endAngle = 30;
     const angleRange = endAngle - startAngle;
 
-    const normalizedSpeed = Math.min(Math.max(speed, 0), maxSpeed);
-    const angle = startAngle + (normalizedSpeed / maxSpeed) * angleRange;
+    const speedToAngle = useCallback((s) => {
+        const clamped = Math.min(Math.max(s, 0), maxSpeed);
+        return startAngle + (clamped / maxSpeed) * angleRange;
+    }, [maxSpeed, angleRange, startAngle]);
 
-    // Generate ticks
-    const ticks = [];
-    // Steps of 20 for main ticks: 0, 20, 40, 60, 80, 100, 120
-    for (let i = 0; i <= 120; i += 20) {
-        const tickAngle = startAngle + (i / maxSpeed) * angleRange;
+    const degToRad = (deg) => (deg * Math.PI) / 180;
 
-        // Convert angle to radians for position calculation
-        const rad = (tickAngle * Math.PI) / 180;
-        const radius = 80;
-        const textRadius = 60;
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
 
-        const x1 = 100 + radius * Math.cos(rad);
-        const y1 = 100 + radius * Math.sin(rad);
-        const x2 = 100 + (radius - 10) * Math.cos(rad);
-        const y2 = 100 + (radius - 10) * Math.sin(rad);
+        const container = canvas.parentElement;
+        const containerSize = Math.min(container.clientWidth, container.clientHeight);
+        const size = Math.max(containerSize, 280);
 
-        const tx = 100 + textRadius * Math.cos(rad);
-        const ty = 100 + textRadius * Math.sin(rad);
+        canvas.style.width = size + 'px';
+        canvas.style.height = size + 'px';
+        canvas.width = size * 2;
+        canvas.height = size * 2;
 
-        ticks.push(
-            <g key={i}>
-                <line
-                    x1={x1} y1={y1} x2={x2} y2={y2}
-                    stroke="#3b82f6"
-                    strokeWidth="3"
-                />
-                <text
-                    x={tx} y={ty}
-                    fill="white"
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize="14"
-                    fontWeight="bold"
-                    style={{ fontFamily: 'Inter, sans-serif' }}
-                >
-                    {i}
-                </text>
-            </g>
-        );
-    }
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(2, 0, 0, 2, 0, 0);
 
-    // Generate sub-ticks (every 10 km/h)
-    const subTicks = [];
-    for (let i = 0; i <= 120; i += 10) {
-        if (i % 20 === 0) continue; // Skip main ticks
-        const tickAngle = startAngle + (i / maxSpeed) * angleRange;
-        const rad = (tickAngle * Math.PI) / 180;
-        const radius = 80;
+        const cx = size / 2;
+        const cy = size / 2;
+        const radius = size * 0.38;
+        const targetAngle = speedToAngle(speed);
 
-        const x1 = 100 + radius * Math.cos(rad);
-        const y1 = 100 + radius * Math.sin(rad);
-        const x2 = 100 + (radius - 6) * Math.cos(rad);
-        const y2 = 100 + (radius - 6) * Math.sin(rad);
 
-        subTicks.push(
-            <line
-                key={`sub-${i}`}
-                x1={x1} y1={y1} x2={x2} y2={y2}
-                stroke="rgba(59, 130, 246, 0.5)"
-                strokeWidth="1.5"
-            />
-        );
-    }
 
-    // Arc Path (Blue only, no red zone for speed usually, or maybe high speed warning?)
-    // Let's keep it simple blue for now to match tachometer style
-    const arcRadius = 88;
-    // Start (-210 deg) to End (30 deg)
-    // Start: x = 100 + 88*cos(-210) = 23.8, y = 144
-    // End:   x = 100 + 88*cos(30) = 176.2, y = 144
-    // Large arc flag 1 because 240 > 180
-    const arcPath = `M 23.8 144 A ${arcRadius} ${arcRadius} 0 1 1 176.2 144`;
+        const draw = () => {
+            const diff = targetAngle - currentAngleRef.current;
+            velocityRef.current = velocityRef.current * 0.80 + diff * 0.07;
+            currentAngleRef.current += velocityRef.current;
+
+            const currentDeg = currentAngleRef.current;
+            const normalizedValue = Math.max(0, (currentDeg - startAngle) / angleRange);
+
+            ctx.clearRect(0, 0, size, size);
+
+            // === Background ===
+            const bgGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius + 25);
+            bgGrad.addColorStop(0, '#0c1a2e');
+            bgGrad.addColorStop(0.6, '#081220');
+            bgGrad.addColorStop(1, '#020810');
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius + 22, 0, Math.PI * 2);
+            ctx.fillStyle = bgGrad;
+            ctx.fill();
+
+            // Outer ring
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius + 22, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(0, 255, 170, 0.12)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Inner shadow ring
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius + 16, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(0, 255, 170, 0.06)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // === Dim Background Arc ===
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, degToRad(startAngle), degToRad(endAngle));
+            ctx.strokeStyle = 'rgba(0, 255, 170, 0.06)';
+            ctx.lineWidth = 16;
+            ctx.lineCap = 'butt';
+            ctx.stroke();
+
+            // === Glowing Active Arc ===
+            if (normalizedValue > 0.001) {
+                const fillStart = degToRad(startAngle);
+                const fillEnd = degToRad(currentDeg);
+
+                // Layer 3: Outer glow
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, fillStart, fillEnd);
+                ctx.strokeStyle = 'rgba(0, 255, 170, 0.06)';
+                ctx.lineWidth = 40;
+                ctx.lineCap = 'butt';
+                ctx.stroke();
+
+                // Layer 2: Medium glow
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, fillStart, fillEnd);
+                ctx.strokeStyle = 'rgba(0, 255, 170, 0.12)';
+                ctx.lineWidth = 26;
+                ctx.stroke();
+
+                // Layer 1: Core arc
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, fillStart, fillEnd);
+                const arcGrad = ctx.createLinearGradient(
+                    cx + radius * Math.cos(fillStart), cy + radius * Math.sin(fillStart),
+                    cx + radius * Math.cos(fillEnd), cy + radius * Math.sin(fillEnd)
+                );
+                arcGrad.addColorStop(0, 'rgba(0, 200, 130, 0.4)');
+                arcGrad.addColorStop(1, `rgba(0, 255, 170, ${0.7 + normalizedValue * 0.3})`);
+                ctx.strokeStyle = arcGrad;
+                ctx.lineWidth = 16;
+                ctx.stroke();
+
+                // Leading edge bloom
+                const lx = cx + radius * Math.cos(fillEnd);
+                const ly = cy + radius * Math.sin(fillEnd);
+                const bloomGrad = ctx.createRadialGradient(lx, ly, 0, lx, ly, 25);
+                bloomGrad.addColorStop(0, `rgba(0, 255, 170, ${0.5 + normalizedValue * 0.4})`);
+                bloomGrad.addColorStop(0.4, 'rgba(0, 255, 170, 0.15)');
+                bloomGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.beginPath();
+                ctx.arc(lx, ly, 25, 0, Math.PI * 2);
+                ctx.fillStyle = bloomGrad;
+                ctx.fill();
+            }
+
+            // === Tick Marks ===
+            for (let i = 0; i <= 120; i += 5) {
+                const tickAngle = startAngle + (i / maxSpeed) * angleRange;
+                const rad = degToRad(tickAngle);
+                const isMajor = i % 20 === 0;
+                const isLit = tickAngle <= currentDeg;
+
+                const len = isMajor ? 14 : 7;
+                const outer = radius - 3;
+                const x1 = cx + outer * Math.cos(rad);
+                const y1 = cy + outer * Math.sin(rad);
+                const x2 = cx + (outer - len) * Math.cos(rad);
+                const y2 = cy + (outer - len) * Math.sin(rad);
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+
+                if (isLit) {
+                    ctx.strokeStyle = '#00ffaa';
+                    ctx.lineWidth = isMajor ? 3 : 1.5;
+                    if (isMajor) { ctx.shadowColor = '#00ffaa'; ctx.shadowBlur = 8; }
+                } else {
+                    ctx.strokeStyle = 'rgba(0, 255, 170, 0.15)';
+                    ctx.lineWidth = isMajor ? 2 : 1;
+                    ctx.shadowBlur = 0;
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                if (isMajor) {
+                    const textR = radius - 28;
+                    const tx = cx + textR * Math.cos(rad);
+                    const ty = cy + textR * Math.sin(rad);
+                    ctx.font = `bold ${Math.round(size * 0.055)}px Inter, sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = isLit ? '#e2f1ff' : 'rgba(136, 146, 176, 0.4)';
+                    ctx.fillText(String(i), tx, ty);
+                }
+            }
+
+            // === Unit Label ===
+            ctx.font = `bold ${Math.round(size * 0.045)}px Inter, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillStyle = 'rgba(136, 146, 176, 0.75)';
+            ctx.fillText('KM/H', cx, cy + radius * 0.38);
+
+            // === Needle ===
+            const needleRad = degToRad(currentDeg);
+            const needleLen = radius - 10;
+            const nx = cx + needleLen * Math.cos(needleRad);
+            const ny = cy + needleLen * Math.sin(needleRad);
+
+            ctx.shadowColor = '#00ffaa';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(nx, ny);
+            ctx.strokeStyle = '#f0f4ff';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Tail
+            const tailX = cx - 18 * Math.cos(needleRad);
+            const tailY = cy - 18 * Math.sin(needleRad);
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(tailX, tailY);
+            ctx.strokeStyle = 'rgba(240, 244, 255, 0.4)';
+            ctx.lineWidth = 3.5;
+            ctx.stroke();
+
+            // === Center Gear Display ===
+            const gearR = size * 0.085;
+            const gearGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, gearR);
+            gearGrad.addColorStop(0, '#0f1d32');
+            gearGrad.addColorStop(1, '#0a1628');
+            ctx.beginPath();
+            ctx.arc(cx, cy, gearR, 0, Math.PI * 2);
+            ctx.fillStyle = gearGrad;
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(0, 255, 170, 0.35)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Gear number
+            const gearFontSize = Math.round(size * 0.1);
+            ctx.font = `bold ${gearFontSize}px Inter, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#00ffaa';
+            ctx.shadowColor = '#00ffaa';
+            ctx.shadowBlur = 12;
+            ctx.fillText(gear === 0 ? 'N' : String(gear), cx, cy - 2);
+            ctx.shadowBlur = 0;
+
+            // "GEAR" label
+            ctx.font = `bold ${Math.round(size * 0.035)}px Inter, sans-serif`;
+            ctx.fillStyle = 'rgba(136, 146, 176, 0.7)';
+            ctx.fillText('GEAR', cx, cy + gearR * 0.7);
+
+            // === Large Digital Speed Display ===
+            const displayW = size * 0.28;
+            const displayH = size * 0.12;
+            const displayX = cx - displayW / 2;
+            const displayY = cy + radius * 0.48;
+            ctx.fillStyle = 'rgba(8, 18, 32, 0.85)';
+            ctx.strokeStyle = 'rgba(0, 255, 170, 0.35)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.roundRect(displayX, displayY, displayW, displayH, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            const fontSize = Math.round(size * 0.09);
+            ctx.font = `bold ${fontSize}px 'Courier New', monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#00ffaa';
+            ctx.shadowColor = '#00ffaa';
+            ctx.shadowBlur = 12;
+            ctx.fillText(String(speed), cx, displayY + displayH / 2);
+            ctx.shadowBlur = 0;
+
+
+
+            if (Math.abs(velocityRef.current) > 0.01 || Math.abs(diff) > 0.1) {
+                animRef.current = requestAnimationFrame(draw);
+            }
+        };
+
+        if (animRef.current) cancelAnimationFrame(animRef.current);
+        animRef.current = requestAnimationFrame(draw);
+        return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+    }, [speed, gear, speedToAngle, maxSpeed, angleRange, startAngle, endAngle]);
 
     return (
-        <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <svg viewBox="0 0 200 200" style={{ width: '100%', height: '100%', maxWidth: '300px' }}>
-                {/* Background Gradient Definition */}
-                <defs>
-                    <radialGradient id="speedoGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-                        <stop offset="0%" stopColor="#1e293b" stopOpacity="1" />
-                        <stop offset="80%" stopColor="#0f172a" stopOpacity="1" />
-                        <stop offset="100%" stopColor="#000" stopOpacity="1" />
-                    </radialGradient>
-                    <filter id="glowSpeedo">
-                        <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-                        <feMerge>
-                            <feMergeNode in="coloredBlur" />
-                            <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                    </filter>
-                    <filter id="needleGlowSpeedo">
-                        <feGaussianBlur stdDeviation="1.5" result="coloredBlur" />
-                        <feMerge>
-                            <feMergeNode in="coloredBlur" />
-                            <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                    </filter>
-                </defs>
-
-                {/* Gauge Background */}
-                <circle cx="100" cy="100" r="95" fill="url(#speedoGradient)" stroke="#334155" strokeWidth="2" />
-
-                {/* Arc */}
-                <path
-                    d={arcPath}
-                    fill="none"
-                    stroke="rgba(59, 130, 246, 0.3)"
-                    strokeWidth="12"
-                    strokeLinecap="butt"
-                />
-
-                {/* Ticks */}
-                {subTicks}
-                {ticks}
-
-                {/* Speed Label */}
-                <text x="100" y="135" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold">km/h</text>
-
-                {/* Needle */}
-                <g transform={`rotate(${angle}, 100, 100)`} style={{ transition: 'transform 0.1s cubic-bezier(0.4, 0.0, 0.2, 1)' }}>
-                    <polygon
-                        points="100,97 185,100 100,103"
-                        fill="#f8fafc"
-                        filter="url(#needleGlowSpeedo)"
-                    />
-                    <circle cx="100" cy="100" r="8" fill="#e2e8f0" stroke="#94a3b8" strokeWidth="2" />
-                    <circle cx="100" cy="100" r="3" fill="#334155" />
-                </g>
-
-                {/* Center Info (Gear & Speed) */}
-                {/* We place this slightly below center or overlaying the needle pivot? 
-            The user image shows gear in center. Let's put Gear in center big, and Speed below it.
-            But wait, the needle pivot is in the center. 
-            If we look at the user image 2, the gear is in the center, and the needle rotates AROUND it (or behind it).
-            Actually, in image 2, the needle seems to be coming from the outer ring? No, it's a standard needle.
-            Let's put the Gear Indicator in the center, covering the needle pivot.
-        */}
-
-                {/* Center Circle for Gear */}
-                <circle cx="100" cy="100" r="25" fill="#0f172a" stroke="#334155" strokeWidth="2" />
-
-                {/* Gear Value */}
-                <text x="100" y="105" textAnchor="middle" fill="#3b82f6" fontSize="24" fontWeight="bold" style={{ fontFamily: 'Inter, sans-serif' }}>
-                    {gear === 0 ? 'N' : gear}
-                </text>
-                <text x="100" y="118" textAnchor="middle" fill="#64748b" fontSize="8">GEAR</text>
-
-                {/* Digital Speed Display (Bottom) */}
-                <rect x="75" y="155" width="50" height="22" rx="4" fill="#0f172a" stroke="#334155" />
-                <text x="100" y="171" textAnchor="middle" fill="#3b82f6" fontSize="14" fontWeight="bold" style={{ fontFamily: 'monospace' }}>
-                    {speed}
-                </text>
-            </svg>
+        <div style={{
+            position: 'relative', width: '100%', height: '100%',
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+            overflow: 'hidden',
+        }}>
+            <canvas ref={canvasRef} />
         </div>
     );
 };
