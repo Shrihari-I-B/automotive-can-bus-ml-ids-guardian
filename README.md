@@ -1,110 +1,114 @@
-# CAN Bus Intrusion Detection System (IDS) Framework
+# 🛡️ CAN Bus Intrusion Detection System (IDS)
 
-A real-time Intrusion Detection System for Automotive CAN Networks using **Hybrid Machine Learning** (Autoencoder + One-Class SVM) and a modern **React Dashboard**.
+A real-time **Intrusion Detection System** for Automotive CAN Networks using **Hybrid Machine Learning** (Autoencoder + One-Class SVM), featuring an animated **Cyberpunk Glass Cockpit Dashboard**.
 
 ![Dashboard Preview](dashboard_preview.png)
 
 ## 🚗 Project Overview
 
-Modern vehicles are "computers on wheels," but their internal network (CAN Bus) was designed in the 1980s without security. This project demonstrates a complete end-to-end solution to detect cyberattacks on vehicles.
+Modern vehicles rely on the **CAN Bus** protocol — designed in the 1980s with **zero built-in security**. This project demonstrates a complete end-to-end solution to detect cyberattacks on in-vehicle networks in real-time.
 
-It consists of three main components:
-1.  **Vehicle Simulator**: Generates realistic physics-based CAN traffic (RPM, Speed, Gear).
-2.  **IDS Engine**: A hybrid ML model that detects anomalies in real-time.
-3.  **Web Dashboard**: A "Glass Cockpit" interface for monitoring and control.
+### System Architecture
+```
+┌──────────────┐     vcan0      ┌──────────────┐    WebSocket    ┌──────────────┐
+│   Vehicle    │ ──────────────▶│   IDS Engine  │ ──────────────▶│    React     │
+│  Simulator   │   CAN Frames   │  (ML Models)  │   Live Data    │  Dashboard   │
+└──────────────┘                └──────────────┘                └──────────────┘
+       │                               │
+       │  CAN IDs:                     │  Detection:
+       │  0x123 = RPM                  │  Autoencoder (Context)
+       │  0x310 = Gear                 │  One-Class SVM (Stats)
+       │  0x240 = Brake                │
+       │                               │
+┌──────────────┐                       │
+│   Attack     │ ──────────────────────┘
+│  Simulators  │   0x000 = Flood (DoS)
+└──────────────┘   0x310 = Spoof
+```
 
 ## ✨ Features
 
-*   **Real-Time Simulation**: Simulates a vehicle accelerating, shifting gears, and braking.
-*   **Hybrid Detection**:
-    *   **Autoencoder**: Detects context/logic attacks (e.g., High RPM vs. Low Speed).
-    *   **One-Class SVM**: Detects statistical anomalies (e.g., DoS/Flooding).
-*   **Attack Injection**:
-    *   **Spoofing**: Injecting fake gear signals.
-    *   **Replay**: Replaying recorded traffic.
-    *   **DoS (Flooding)**: Jamming the bus with high-priority messages.
-*   **Interactive Dashboard**:
-    *   Live Gauges (Tachometer, Speedometer).
-    *   Real-time Alert Feed.
-    *   System Logs with "Bus Off" detection.
+- **🎯 Hybrid ML Detection**: Autoencoder for context-aware attacks + One-Class SVM for statistical anomalies
+- **🚀 Real-Time Dashboard**: Animated HUD-style gauges with glowing neon arcs, spring-physics needles, and progressive tick illumination
+- **⚡ Attack Simulation**: Spoofing, Replay, and DoS (Flood) attack injection from the dashboard
+- **🖥️ Glassmorphism UI**: Cyberpunk-themed interface with frosted glass panels, neon accents, and grid backdrop
+- **📊 Live Monitoring**: WebSocket-powered real-time CAN data, IDS alerts, and system logs
+- **🔴 DoS Detection**: Automatic "Bus Off" state detection with visual indicators
 
 ## 🛠️ Tech Stack
 
-*   **Backend**: Python 3.8+, FastAPI, WebSockets
-*   **Frontend**: React.js, Vite, Recharts, Lucide Icons
-*   **Machine Learning**: TensorFlow (Keras), Scikit-learn
-*   **CAN Interface**: `python-can`, `socketcan` (vcan0)
-*   **OS**: Linux / WSL2 (Ubuntu)
+| Layer | Technology |
+|---|---|
+| **Backend** | Python 3.8+, FastAPI, WebSockets |
+| **Frontend** | React.js, Vite, HTML5 Canvas, Lucide Icons |
+| **Machine Learning** | TensorFlow (Keras Autoencoder), Scikit-learn (One-Class SVM) |
+| **CAN Interface** | `python-can`, `socketcan`, Virtual CAN (`vcan0`) |
+| **OS** | Linux / WSL2 (Ubuntu) |
 
-## 🚀 Installation & Setup
+## 🚀 Quick Start
 
 ### Prerequisites
-*   Linux or WSL2 (Windows Subsystem for Linux)
-*   Python 3.8+
-*   Node.js 16+
+- Linux or WSL2 (Windows Subsystem for Linux)
+- Python 3.8+
+- Node.js 16+
 
-### 1. Clone the Repository
+### 1. Clone & Setup CAN
 ```bash
-git clone https://github.com/YOUR_USERNAME/can-ids-framework.git
-cd can-ids-framework
-```
+git clone https://github.com/Shrihari-I-B/automotive-can-bus-ml-ids-guardian.git
+cd automotive-can-bus-ml-ids-guardian
 
-### 2. Setup Virtual CAN Interface
-Run the helper script to create the `vcan0` interface:
-```bash
-sudo ./run_system.sh
-```
-*Or manually:*
-```bash
+# Setup Virtual CAN interface
 sudo modprobe vcan
 sudo ip link add dev vcan0 type vcan
 sudo ip link set up vcan0
 ```
 
-### 3. Backend Setup
+### 2. Backend
 ```bash
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
-```
-
-### 4. Frontend Setup
-```bash
-cd frontend
-npm install
-```
-
-## 🖥️ Usage
-
-### 1. Start the Backend Server
-From the root directory:
-```bash
 uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 2. Start the Frontend
-In a new terminal (inside `frontend/`):
+### 3. Frontend (new terminal)
 ```bash
+cd frontend
+npm install
 npm run dev
 ```
-Open your browser at `http://localhost:5173`.
 
-### 3. Run the Demo
-1.  Click **Start Sim** on the dashboard. You should see the gauges move.
-2.  Click **Enable IDS** to start the detection engine.
-3.  Try clicking **Spoof Attack** or **Flood Attack** to see the IDS in action!
+Open **http://localhost:5173** in your browser.
+
+### 4. Run the Demo
+1. Click **Start Sim** → Watch the gauges animate as the vehicle accelerates
+2. Click **Enable IDS** → Activate the ML detection engine
+3. Click **Spoof Attack** or **Flood Attack** → See intrusions detected in real-time!
 
 ## 🛡️ Attack Scenarios
 
-| Attack | Description | Detection Method |
-| :--- | :--- | :--- |
-| **Spoofing** | Injecting "Gear 2" while cruising in "Gear 5". | **Autoencoder** (Context Mismatch) |
-| **Replay** | Replaying a recorded "Unlock" signal. | **One-Class SVM** (Timing/IAT Anomaly) |
-| **DoS** | Flooding the bus with ID `0x000`. | **One-Class SVM** (Frequency Spike) |
+| Attack | What It Does | CAN ID | Detection |
+|---|---|---|---|
+| **Spoofing** | Injects fake "Gear 2" while cruising in Gear 5 | `0x310` | **Autoencoder** (Context Mismatch) |
+| **Replay** | Replays recorded CAN traffic | Various | **One-Class SVM** (Timing Anomaly) |
+| **DoS Flood** | Jams the bus with highest-priority ID | `0x000` | **One-Class SVM** (Frequency Spike) |
+
+## � Project Structure
+```
+can_ids_framework/
+├── backend/                 # FastAPI server
+│   ├── main.py              # WebSocket + API endpoints
+│   ├── process_manager.py   # Script lifecycle manager
+│   ├── log_parser.py        # IDS log parsing + DoS detection
+│   └── routers/control.py   # REST API for start/stop/attack
+├── frontend/                # React dashboard
+│   ├── src/App.jsx          # Main dashboard layout
+│   └── src/components/      # Tachometer, Speedometer (Canvas)
+├── can_ids/                 # Core ML + simulation
+│   ├── models/              # Trained Autoencoder + SVM models
+│   ├── attacks/             # Attack scripts (flood, spoof)
+│   └── main_live_ids.py     # Real-time IDS detection engine
+└── run_simulation_v2.py     # Vehicle physics simulator
+```
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License — see [LICENSE](LICENSE) for details.
