@@ -5,8 +5,9 @@ import Tachometer from './components/Tachometer';
 import Speedometer from './components/Speedometer';
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || 'localhost:8000';
-const API_URL = `http://${BACKEND}/api`;
-const WS_URL = `ws://${BACKEND}/ws/dashboard`;
+const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+const API_URL = `${isSecure ? 'https' : 'http'}://${BACKEND}/api`;
+const WS_URL = `${isSecure ? 'wss' : 'ws'}://${BACKEND}/ws/dashboard`;
 
 function App() {
     const [data, setData] = useState({
