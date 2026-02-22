@@ -4,8 +4,9 @@ import { Play, Square, AlertTriangle, Activity, Shield, Terminal, Zap, RefreshCw
 import Tachometer from './components/Tachometer';
 import Speedometer from './components/Speedometer';
 
-const API_URL = 'http://localhost:8000/api';
-const WS_URL = 'ws://localhost:8000/ws/dashboard';
+const BACKEND = import.meta.env.VITE_BACKEND_URL || 'localhost:8000';
+const API_URL = `http://${BACKEND}/api`;
+const WS_URL = `ws://${BACKEND}/ws/dashboard`;
 
 function App() {
     const [data, setData] = useState({
